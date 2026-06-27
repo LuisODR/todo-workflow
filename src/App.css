@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap");
+
 /* ── Variables ── */
 :root {
   --blue: #2196f3;
@@ -23,8 +25,6 @@
 
 /* ── Reset & Base ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-@import url("https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap");
 
 body {
   font-family: var(--font-body);
@@ -467,6 +467,206 @@ body {
   flex-shrink: 0;
 }
 
+/* ── Tabs ── */
+.tabs-nav {
+  display: flex;
+  gap: 8px;
+  padding: 4px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.tab-btn {
+  flex: 1;
+  padding: 12px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-family: var(--font-head);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-mid);
+  cursor: pointer;
+  letter-spacing: 0.2px;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s;
+}
+.tab-btn:hover {
+  background: var(--blue-light);
+  color: var(--blue-dark);
+}
+.tab-btn--active {
+  background: var(--blue);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(33, 150, 243, 0.35);
+}
+.tab-btn--active:hover {
+  background: var(--blue-dark);
+  color: #fff;
+}
+
+/* ── Backup Card ── */
+.backup-card { }
+.backup-text {
+  font-size: 13px;
+  color: var(--text-mid);
+  line-height: 1.55;
+  margin-bottom: 16px;
+}
+.backup-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.btn-backup {
+  flex: 1 1 200px;
+  height: 46px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-head);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  letter-spacing: 0.2px;
+  transition: transform 0.15s, box-shadow 0.2s, background 0.2s;
+  border: none;
+}
+.btn-backup--export {
+  background: var(--blue);
+  color: #fff;
+  box-shadow: 0 6px 18px rgba(33, 150, 243, 0.32);
+}
+.btn-backup--export:hover {
+  background: var(--blue-dark);
+  transform: translateY(-1px);
+}
+.btn-backup--import {
+  background: var(--surface);
+  color: var(--blue-dark);
+  border: 1.5px solid var(--blue-mid);
+}
+.btn-backup--import:hover {
+  background: var(--blue-light);
+  transform: translateY(-1px);
+}
+.backup-msg {
+  margin-top: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+}
+.backup-msg--sucesso {
+  background: var(--done-bg);
+  color: var(--done-text);
+  border: 1px solid #bbf7d0;
+}
+.backup-msg--erro {
+  background: #fff5f5;
+  color: #ef4444;
+  border: 1px solid #fca5a5;
+}
+
+/* ── Finalização de Vendas ── */
+.fin-cliente-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.fin-origem-toggle {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.fin-origem-options {
+  display: flex;
+  gap: 10px;
+}
+.fin-origem-btn {
+  flex: 1;
+  height: 46px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--surface2);
+  color: var(--text-mid);
+  font-family: var(--font-head);
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.12s;
+}
+.fin-origem-btn:hover {
+  border-color: var(--blue-mid);
+  background: var(--blue-light);
+  color: var(--blue-dark);
+}
+.fin-origem-btn--active {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(33, 150, 243, 0.3);
+}
+.fin-origem-btn--active:hover {
+  background: var(--blue-dark);
+  border-color: var(--blue-dark);
+  color: #fff;
+}
+
+/* ── Feitos: card clicável + status ── */
+.feito-card--clickable {
+  cursor: pointer;
+  position: relative;
+}
+.feito-card--editando {
+  border-color: var(--blue-mid);
+  background: var(--blue-light);
+}
+.feito-status {
+  flex-shrink: 0;
+}
+.feito-status-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+.feito-status-badge--done {
+  background: var(--done-bg);
+  color: var(--done-text);
+  border: 1px solid #bbf7d0;
+}
+.feito-status-badge--pending {
+  background: #fff7ed;
+  color: #ea580c;
+  border: 1px solid #fed7aa;
+}
+.feito-remove-btn {
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-light);
+  font-size: 13px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+.feito-remove-btn:hover {
+  background: #fee2e2;
+  color: #ef4444;
+}
+
 /* ── Responsive ── */
 @media (max-width: 500px) {
   .app-root { padding: 24px 12px 60px; }
@@ -475,4 +675,7 @@ body {
   .field-group--select { flex: 1 1 100%; }
   .step-item { padding: 10px 10px; }
   .step-text { font-size: 13px; }
+  .tabs-nav { flex-direction: column; }
+  .backup-actions { flex-direction: column; }
+  .fin-origem-options { flex-direction: column; }
 }
