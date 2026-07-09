@@ -1,12 +1,10 @@
-name: Deploy to GitHub Pages
+name: Deploy static content to Pages
 
 on:
-  # Dispara o deploy sempre que houver um push na branch main
   push:
-    branches:
-      - main # ATENÇÃO: se sua branch principal se chamar "master", troque aqui para "master"
+    branches: ['main']
 
-# Configura as permissões necessárias para o GitHub Pages
+# Permissões necessárias
 permissions:
   contents: read
   pages: write
@@ -25,27 +23,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
-          
       - name: Install dependencies
         run: npm install
-        
       - name: Build
         run: npm run build
-        
       - name: Setup Pages
         uses: actions/configure-pages@v4
-        
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './dist' # Faz o upload apenas da pasta de build do Vite
-          
+          path: './dist'
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4

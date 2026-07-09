@@ -2,6 +2,7 @@ import { useState } from "react";
 import { FLUXO_VENDA_STEPS, FLUXO_VENDA_ORIGENS } from "../data/steps";
 import { useLocalStorage, STORAGE_KEYS } from "../hooks/useLocalStorage";
 import FeitosList from "./FeitosList";
+import ClientesFinalizados from "./ClientesFinalizados";
 
 function vazio() {
   return {
@@ -29,6 +30,7 @@ function isFormatoValido(dados) {
 }
 
 export default function FluxoVenda() {
+  const [subTab, setSubTab] = useState("checklist");
   const [feitos, setFeitos] = useLocalStorage(
     STORAGE_KEYS.FEITOS,
     [],
@@ -38,6 +40,11 @@ export default function FluxoVenda() {
   const [saveAnim, setSaveAnim] = useState(false);
 
   const checked = form.checked;
+
+  const totalSteps = FLUXO_VENDA_STEPS.length;
+  const qtdFinalizados = feitos.filter(
+    (f) => Array.isArray(f.checked) && f.checked.filter(Boolean).length === totalSteps
+  ).length;
 
   const handleCheck = (index) => {
     if (index > 0 && !checked[index - 1] && !checked[index]) {
@@ -130,6 +137,31 @@ export default function FluxoVenda() {
 
   return (
     <>
+      {/* Sub-tabs */}
+      <nav className="tabs-nav subtabs-nav">
+        <button
+          className={`tab-btn ${subTab === "checklist" ? "tab-btn--active" : ""}`}
+          onClick={() => setSubTab("checklist")}
+        >
+          Checklist
+        </button>
+        <button
+          className={`tab-btn ${subTab === "finalizados" ? "tab-btn--active" : ""}`}
+          onClick={() => setSubTab("finalizados")}
+        >
+          Clientes Finalizados
+          {qtdFinalizados > 0 && (
+            <span className={`subtab-badge ${subTab === "finalizados" ? "subtab-badge--active" : ""}`}>
+              {qtdFinalizados}
+            </span>
+          )}
+        </button>
+      </nav>
+
+      {subTab === "finalizados" ? (
+        <ClientesFinalizados />
+      ) : (
+        <>
       {/* Client Info */}
       <section className="card client-card">
         <div className="fin-cliente-header">
@@ -253,6 +285,8 @@ export default function FluxoVenda() {
         onLimparHistorico={handleLimparHistorico}
         renderTag={(f) => f.origem}
       />
+      </>
+      )}
     </>
   );
 }
