@@ -33,7 +33,7 @@ export default function LoginPage() {
           </div>
           {loginError && <p className="login-error" role="alert"><IcoAlerta /> {loginError}</p>}
           <button type="submit" className="btn-save login-btn" disabled={loading || !email || !password}>
-            {loading ? <span className="login-spinner" /> : <><span className="btn-save-icon">🔑</span> Entrar</>}
+            {loading ? <span className="login-spinner" /> : <> Entrar</>}
           </button>
         </form>
         <div className="login-hint">

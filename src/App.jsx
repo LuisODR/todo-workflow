@@ -15,8 +15,8 @@ function IcoSair()      { return <svg width="15" height="15" viewBox="0 0 24 24"
 const TODO_TABS = [
   { id:"fluxo",       label:"Fluxo de Venda"     },
   { id:"finalizacao", label:"Finalização"          },
-  { id:"pdf",         label:"📄 Gerador de PDF"   },
-  { id:"moedas",      label:"🪙 Org. de Moedas"  },
+  { id:"pdf",         label:"Gerador de PDF"   },
+  { id:"moedas",      label:"Org. de Moedas"  },
 ];
 const SEM_BACKUP        = new Set(["pdf","moedas"]);
 const CONTAINER_LARGO   = new Set(["moedas"]);
@@ -89,7 +89,7 @@ export default function App() {
                   <div className="user-menu-info">
                     <strong className="user-menu-name">{user?.name}</strong>
                     <span className="user-menu-email">{user?.email}</span>
-                    <span className={`user-menu-role ${isSuperUser ? "user-menu-role--super" : ""}`}>{isSuperUser ? "🛡️ Super User" : "👤 Usuário"}</span>
+                    <span className={`user-menu-role ${isSuperUser ? "user-menu-role--super" : ""}`}>{isSuperUser ? " Super User" : "👤 Usuário"}</span>
                   </div>
                   <button className="user-menu-logout" onClick={()=>{setUserMenuOpen(false);logout();}}><IcoSair />Sair</button>
                 </div>
