@@ -1,15 +1,5 @@
 import { useEffect, useState } from "react";
 
-/**
- * Hook simples para persistir um valor no localStorage.
- * Funciona como useState, mas lê/grava automaticamente.
- *
- * @param {string} key
- * @param {*} initialValue valor usado se não houver nada salvo (ou se os dados salvos forem inválidos)
- * @param {(value: any) => boolean} [isValid] validador opcional. Se os dados salvos
- *   não passarem nessa checagem (ex: formato de uma versão antiga do app), o hook
- *   ignora o que estava salvo e usa o initialValue, evitando que a página quebre.
- */
 export function useLocalStorage(key, initialValue, isValid) {
   const [value, setValue] = useState(() => {
     try {
@@ -26,24 +16,17 @@ export function useLocalStorage(key, initialValue, isValid) {
   useEffect(() => {
     try {
       localStorage.setItem(key, JSON.stringify(value));
-    } catch {
-      // Storage indisponível ou cheio - ignora silenciosamente
-    }
+    } catch {}
   }, [key, value]);
 
   return [value, setValue];
 }
 
-// Todas as chaves usadas pelo app — centralizadas aqui para o export/import
 export const STORAGE_KEYS = {
   FEITOS: "todo_workflow_feitos",
   FINALIZACAO: "todo_workflow_finalizacao",
 };
 
-/**
- * Monta um objeto com todos os dados salvos do app e dispara o download
- * de um arquivo .json para o usuário guardar como backup.
- */
 export function exportarBackup() {
   const dados = {
     tipo: "todo-workflow-backup",
@@ -52,25 +35,17 @@ export function exportarBackup() {
     [STORAGE_KEYS.FEITOS]: safeParse(localStorage.getItem(STORAGE_KEYS.FEITOS), []),
     [STORAGE_KEYS.FINALIZACAO]: safeParse(localStorage.getItem(STORAGE_KEYS.FINALIZACAO), []),
   };
-
-  const blob = new Blob([JSON.stringify(dados, null, 2)], {
-    type: "application/json",
-  });
+  const blob = new Blob([JSON.stringify(dados, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  const dataStr = new Date().toISOString().slice(0, 10);
   a.href = url;
-  a.download = `backup-fluxo-venda-${dataStr}.json`;
+  a.download = `backup-fluxo-venda-${new Date().toISOString().slice(0,10)}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
 
-/**
- * Lê um arquivo .json escolhido pelo usuário e devolve os dados
- * já validados (ou lança erro se o arquivo não for um backup válido).
- */
 export function lerArquivoBackup(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -78,12 +53,12 @@ export function lerArquivoBackup(file) {
       try {
         const dados = JSON.parse(reader.result);
         if (dados.tipo !== "todo-workflow-backup") {
-          reject(new Error("Esse arquivo não parece ser um backup válido deste app."));
+          reject(new Error("Arquivo não é um backup válido."));
           return;
         }
         resolve(dados);
       } catch {
-        reject(new Error("Não foi possível ler o arquivo. Verifique se é o .json exportado pelo app."));
+        reject(new Error("Não foi possível ler o arquivo."));
       }
     };
     reader.onerror = () => reject(new Error("Erro ao abrir o arquivo."));
@@ -91,25 +66,14 @@ export function lerArquivoBackup(file) {
   });
 }
 
-/**
- * Aplica os dados de um backup importado diretamente no localStorage.
- * Depois disso, é necessário recarregar a página (ou o estado em memória)
- * para refletir os dados novos.
- */
 export function aplicarBackup(dados) {
-  if (STORAGE_KEYS.FEITOS in dados) {
+  if (STORAGE_KEYS.FEITOS in dados)
     localStorage.setItem(STORAGE_KEYS.FEITOS, JSON.stringify(dados[STORAGE_KEYS.FEITOS]));
-  }
-  if (STORAGE_KEYS.FINALIZACAO in dados) {
+  if (STORAGE_KEYS.FINALIZACAO in dados)
     localStorage.setItem(STORAGE_KEYS.FINALIZACAO, JSON.stringify(dados[STORAGE_KEYS.FINALIZACAO]));
-  }
 }
 
 function safeParse(str, fallback) {
-  if (str === null || str === undefined) return fallback;
-  try {
-    return JSON.parse(str);
-  } catch {
-    return fallback;
-  }
+  if (!str) return fallback;
+  try { return JSON.parse(str); } catch { return fallback; }
 }

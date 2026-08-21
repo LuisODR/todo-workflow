@@ -1,292 +1,141 @@
-import { useState } from "react";
-import { FLUXO_VENDA_STEPS, FLUXO_VENDA_ORIGENS } from "../data/steps";
-import { useLocalStorage, STORAGE_KEYS } from "../hooks/useLocalStorage";
-import FeitosList from "./FeitosList";
-import ClientesFinalizados from "./ClientesFinalizados";
+import { useState, useEffect } from "react";
+import { useTracker } from "../hooks/useTracker";
 
-function vazio() {
-  return {
-    id: null,
-    nome: "",
-    origem: FLUXO_VENDA_ORIGENS[0],
-    numeroPedido: "",
-    checked: Array(FLUXO_VENDA_STEPS.length).fill(false),
-    dataHora: null,
-  };
-}
+const STEPS = [
+  "Criar a pasta do cliente + Anotar nome dele aqui",
+  "Separar peças fisicamente as que foram vendidas",
+  "Retirar as fotos das peças da pasta de fotos e passar para a pasta do cliente",
+  "Anotar no Notas o endereço do cliente + salvar no contato cidade e Estado",
+  "Anotar qual é o custo da peça na foto dela (dentro do envelope)",
+  "Retirar as peças do ESTOQUE",
+  "Retirar as peças do Site + Mercado Livre",
+  "Criar o pedido cliente em documento de Excel/PDF + Colocar na pasta dele",
+  "Trocar a etiqueta (whatsapp) - Parar aqui em Pedidos do wpp",
+  "Colocar para imprimir o pedido do Cliente",
+  "Ver se o cliente adquiriu seguro (ML [Mercado Livre] Não)",
+  "Ver se alguma moeda precisa do Termo de Autenticidade, R$1.000,00",
+  "Inserir valor recebido no Fluxo de Vendas",
+  "Convidar o cliente para o Grupo Exclusivo - Msg Automatica (conviteZN)",
+];
+const ORIGENS = ["Site", "Xiaomi", "Samsung", "Numeração"];
+const LS_KEY = "todo_workflow_feitos";
 
-// Valida que os dados salvos no localStorage estão no formato atual
-// (lista de clientes com id/checked). Protege contra formatos incompatíveis
-// de versões antigas, que quebrariam a tela.
-function isFormatoValido(dados) {
-  if (!Array.isArray(dados)) return false;
-  return dados.every(
-    (item) =>
-      item &&
-      typeof item === "object" &&
-      "id" in item &&
-      Array.isArray(item.checked)
-  );
+function formatDateTime(iso) {
+  return new Date(iso).toLocaleString("pt-BR", { day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit" });
 }
 
 export default function FluxoVenda() {
-  const [subTab, setSubTab] = useState("checklist");
-  const [feitos, setFeitos] = useLocalStorage(
-    STORAGE_KEYS.FEITOS,
-    [],
-    isFormatoValido
-  );
-  const [form, setForm] = useState(vazio());
+  const { registrar } = useTracker();
+  const [nomeCliente, setNomeCliente] = useState("");
+  const [origem, setOrigem] = useState(ORIGENS[0]);
+  const [numeroPedido, setNumeroPedido] = useState("");
+  const [checked, setChecked] = useState(Array(STEPS.length).fill(false));
+  const [feitos, setFeitos] = useState([]);
   const [saveAnim, setSaveAnim] = useState(false);
 
-  const checked = form.checked;
+  useEffect(() => {
+    try { setFeitos(JSON.parse(localStorage.getItem(LS_KEY)) || []); } catch { setFeitos([]); }
+  }, []);
 
-  const totalSteps = FLUXO_VENDA_STEPS.length;
-  const qtdFinalizados = feitos.filter(
-    (f) => Array.isArray(f.checked) && f.checked.filter(Boolean).length === totalSteps
-  ).length;
+  const progress = Math.round((checked.filter(Boolean).length / STEPS.length) * 100);
 
   const handleCheck = (index) => {
     if (index > 0 && !checked[index - 1] && !checked[index]) {
-      const ok = window.confirm(
-        "Você está pulando um passo, deseja continuar marcando mesmo assim?"
-      );
-      if (!ok) return;
+      if (!window.confirm("Você está pulando um passo, deseja continuar marcando mesmo assim?")) return;
     }
-    setForm((prev) => {
-      const next = [...prev.checked];
-      next[index] = !next[index];
-      return { ...prev, checked: next };
-    });
+    setChecked((prev) => { const n = [...prev]; n[index] = !n[index]; return n; });
   };
 
   const handleSalvar = () => {
-    const allDone = checked.every(Boolean);
-    if (!allDone) {
-      const ok = window.confirm(
-        "Você está salvando um cliente sem ter feito todos os passos. O progresso atual ficará salvo e você poderá voltar para completar depois. Deseja prosseguir?"
-      );
-      if (!ok) return;
+    if (!checked.every(Boolean)) {
+      if (!window.confirm("Você está finalizando um cliente sem ter feito um passo, deseja prosseguir mesmo assim?")) return;
     }
-
-    const origemLabel =
-      form.origem === "Numeração" && form.numeroPedido.trim()
-        ? `Pedido ${form.numeroPedido.trim()}`
-        : form.origem;
-
-    const entry = {
-      id: form.id ?? Date.now(),
-      nome: form.nome.trim() || "(sem nome)",
-      origem: origemLabel,
-      origemRaw: form.origem,
-      numeroPedido: form.numeroPedido,
-      checked,
-      dataHora: new Date().toISOString(),
-    };
-
-    setFeitos((prev) => {
-      const existe = prev.some((f) => f.id === entry.id);
-      if (existe) {
-        return prev.map((f) => (f.id === entry.id ? entry : f));
-      }
-      return [entry, ...prev];
-    });
-
-    setSaveAnim(true);
-    setTimeout(() => setSaveAnim(false), 700);
-
-    setForm(vazio());
-  };
-
-  const handleEditar = (entry) => {
-    setForm({
-      id: entry.id,
-      nome: entry.nome === "(sem nome)" ? "" : entry.nome,
-      origem: entry.origemRaw || FLUXO_VENDA_ORIGENS[0],
-      numeroPedido: entry.numeroPedido || "",
-      checked: entry.checked || Array(FLUXO_VENDA_STEPS.length).fill(false),
-      dataHora: entry.dataHora,
-    });
-  };
-
-  const handleNovo = () => {
-    setForm(vazio());
-  };
-
-  const handleRemover = (id) => {
-    const ok = window.confirm("Remover este cliente da lista de Feitos?");
-    if (!ok) return;
-    setFeitos((prev) => prev.filter((f) => f.id !== id));
-    if (form.id === id) setForm(vazio());
+    const origemLabel = origem === "Numeração" && numeroPedido.trim() ? `Pedido ${numeroPedido.trim()}` : origem;
+    const entry = { id: Date.now(), nome: nomeCliente.trim() || "(sem nome)", origem: origemLabel, dataHora: new Date().toISOString() };
+    const updated = [entry, ...feitos];
+    setFeitos(updated);
+    localStorage.setItem(LS_KEY, JSON.stringify(updated));
+    registrar("fluxo_salvo", `Salvou cliente "${entry.nome}"`, { clienteNome: entry.nome, origem: entry.origem });
+    setSaveAnim(true); setTimeout(() => setSaveAnim(false), 700);
+    setNomeCliente(""); setOrigem(ORIGENS[0]); setNumeroPedido(""); setChecked(Array(STEPS.length).fill(false));
   };
 
   const handleLimparHistorico = () => {
-    const ok = window.confirm(
-      "Tem certeza que deseja limpar todo o histórico de clientes feitos?"
-    );
-    if (!ok) return;
-    setFeitos([]);
-    setForm(vazio());
+    if (!window.confirm("Tem certeza que deseja limpar todo o histórico de clientes feitos?")) return;
+    localStorage.removeItem(LS_KEY); setFeitos([]);
   };
 
-  const progress = Math.round(
-    (checked.filter(Boolean).length / FLUXO_VENDA_STEPS.length) * 100
-  );
-
-  const editando = form.id !== null;
-
   return (
-    <>
-      {/* Sub-tabs */}
-      <nav className="tabs-nav subtabs-nav">
-        <button
-          className={`tab-btn ${subTab === "checklist" ? "tab-btn--active" : ""}`}
-          onClick={() => setSubTab("checklist")}
-        >
-          Checklist
-        </button>
-        <button
-          className={`tab-btn ${subTab === "finalizados" ? "tab-btn--active" : ""}`}
-          onClick={() => setSubTab("finalizados")}
-        >
-          Clientes Finalizados
-          {qtdFinalizados > 0 && (
-            <span className={`subtab-badge ${subTab === "finalizados" ? "subtab-badge--active" : ""}`}>
-              {qtdFinalizados}
-            </span>
-          )}
-        </button>
-      </nav>
-
-      {subTab === "finalizados" ? (
-        <ClientesFinalizados />
-      ) : (
-        <>
-      {/* Client Info */}
+    <div className="fluxo-root">
       <section className="card client-card">
-        <div className="fin-cliente-header">
-          <h2 className="section-title" style={{ marginBottom: 0 }}>
-            <span className="section-dot" />
-            Dados do Cliente
-          </h2>
-          {editando && (
-            <button className="btn-clear" onClick={handleNovo}>
-              + Novo Cliente
-            </button>
-          )}
-        </div>
-        <div className="client-fields" style={{ marginTop: 18 }}>
+        <h2 className="section-title"><span className="section-dot" />Dados do Cliente</h2>
+        <div className="client-fields">
           <div className="field-group">
             <label className="field-label">Nome do Cliente</label>
-            <input
-              type="text"
-              className="field-input"
-              placeholder="Ex: João Silva"
-              value={form.nome}
-              onChange={(e) => setForm((p) => ({ ...p, nome: e.target.value }))}
-            />
+            <input type="text" className="field-input" placeholder="Ex: João Silva" value={nomeCliente} onChange={(e) => setNomeCliente(e.target.value)} />
           </div>
           <div className="field-group field-group--select">
             <label className="field-label">Origem</label>
-            <select
-              className="field-select"
-              value={form.origem}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, origem: e.target.value, numeroPedido: "" }))
-              }
-            >
-              {FLUXO_VENDA_ORIGENS.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
+            <select className="field-select" value={origem} onChange={(e) => { setOrigem(e.target.value); setNumeroPedido(""); }}>
+              {ORIGENS.map((o) => <option key={o} value={o}>{o}</option>)}
             </select>
           </div>
-          {form.origem === "Numeração" && (
+          {origem === "Numeração" && (
             <div className="field-group field-group--pedido">
               <label className="field-label">Nº do Pedido</label>
-              <input
-                type="text"
-                className="field-input field-input--pedido"
-                placeholder="Ex: 10234"
-                value={form.numeroPedido}
-                onChange={(e) =>
-                  setForm((p) => ({ ...p, numeroPedido: e.target.value }))
-                }
-                autoFocus
-              />
+              <input type="text" className="field-input field-input--pedido" placeholder="Ex: 10234" value={numeroPedido} onChange={(e) => setNumeroPedido(e.target.value)} autoFocus />
             </div>
           )}
         </div>
       </section>
 
-      {/* Progress */}
       <div className="progress-wrap">
-        <div className="progress-label">
-          <span>Progresso</span>
-          <span className="progress-pct">{progress}%</span>
-        </div>
-        <div className="progress-track">
-          <div className="progress-fill" style={{ width: `${progress}%` }} />
-        </div>
+        <div className="progress-label"><span>Progresso</span><span className="progress-pct">{progress}%</span></div>
+        <div className="progress-track"><div className="progress-fill" style={{ width: `${progress}%` }} /></div>
       </div>
 
-      {/* Checklist */}
       <section className="card checklist-card">
-        <h2 className="section-title">
-          <span className="section-dot" />
-          Checklist de Tarefas
-        </h2>
+        <h2 className="section-title"><span className="section-dot" />Checklist de Tarefas</h2>
         <ol className="step-list">
-          {FLUXO_VENDA_STEPS.map((step, i) => (
-            <li
-              key={i}
-              className={`step-item ${checked[i] ? "step-item--done" : ""}`}
-              onClick={() => handleCheck(i)}
-            >
+          {STEPS.map((step, i) => (
+            <li key={i} className={`step-item ${checked[i] ? "step-item--done" : ""}`} onClick={() => handleCheck(i)}>
               <span className="step-number">{i + 1}</span>
-              <div
-                className={`step-checkbox ${checked[i] ? "step-checkbox--checked" : ""}`}
-              >
-                {checked[i] && (
-                  <svg viewBox="0 0 12 10" fill="none" className="check-svg">
-                    <polyline
-                      points="1.5,5 4.5,8 10.5,1.5"
-                      stroke="white"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                )}
+              <div className={`step-checkbox ${checked[i] ? "step-checkbox--checked" : ""}`}>
+                {checked[i] && <svg viewBox="0 0 12 10" fill="none" className="check-svg"><polyline points="1.5,5 4.5,8 10.5,1.5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
               </div>
               <span className="step-text">{step}</span>
             </li>
           ))}
         </ol>
-
-        <button
-          className={`btn-save ${saveAnim ? "btn-save--pulse" : ""}`}
-          onClick={handleSalvar}
-        >
-          <span className="btn-save-icon">💾</span>
-          {editando ? "Atualizar Cliente" : "Salvar Cliente"}
+        <button className={`btn-save ${saveAnim ? "btn-save--pulse" : ""}`} onClick={handleSalvar}>
+          <span className="btn-save-icon">💾</span>Salvar Cliente
         </button>
       </section>
 
-      {/* Feitos */}
-      <FeitosList
-        feitos={feitos}
-        getTotalSteps={() => FLUXO_VENDA_STEPS.length}
-        getProgress={(f) => f.checked.filter(Boolean).length}
-        editandoId={form.id}
-        onEditar={handleEditar}
-        onRemover={handleRemover}
-        onLimparHistorico={handleLimparHistorico}
-        renderTag={(f) => f.origem}
-      />
-      </>
-      )}
-    </>
+      <section className="card feitos-card">
+        <div className="feitos-header">
+          <h2 className="section-title" style={{ marginBottom: 0 }}>
+            <span className="section-dot" />Feitos{feitos.length > 0 && <span className="feitos-badge">{feitos.length}</span>}
+          </h2>
+          {feitos.length > 0 && <button className="btn-clear" onClick={handleLimparHistorico}>Limpar Histórico</button>}
+        </div>
+        {feitos.length === 0 ? (
+          <div className="feitos-empty"><span className="feitos-empty-icon">📋</span><p>Nenhum cliente finalizado ainda.</p></div>
+        ) : (
+          <div className="feitos-list">
+            {feitos.map((f) => (
+              <div className="feito-card" key={f.id}>
+                <div className="feito-avatar">{(f.nome[0] || "?").toUpperCase()}</div>
+                <div className="feito-info">
+                  <span className="feito-nome">{f.nome}</span>
+                  <span className="feito-meta"><span className="feito-tag">{f.origem}</span>{formatDateTime(f.dataHora)}</span>
+                </div>
+                <div className="feito-check">✓</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
